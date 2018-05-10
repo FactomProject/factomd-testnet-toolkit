@@ -96,13 +96,15 @@ and restart docker:
 
 You can manually start the docker daemon via:
 
-```sudo dockerd -H=unix:///var/run/docker.sock -H=0.0.0.0:2376 --tlscert=<path to cert.pem> --tlskey=<path to key.pem>```
+```
+sudo dockerd -H=unix:///var/run/docker.sock -H=0.0.0.0:2376 --tlscert=<path to cert.pem> --tlskey=<path to key.pem>
+```
 
 ## Join the Docker Swarm
 
 Finally, to join the swarm:
 ```
-docker swarm join --token SWMTKN-1-5ct5plmbn1ombbjqp8ql8hq93jkof6246suzast5n1gfwa083b-1ui6w6fupe45tizz0tv6syzrs 54.171.68.124:2377
+docker swarm join --token SWMTKN-1-0bv5pj6ne5sabqnt094shexfj6qdxjpuzs0dpigckrsqmjh0ro-87wmh7jsut6ngmn819ebsqk3m 54.171.68.124:2377
 ```
 
 As a reminder, joining as a worker means you have no ability to control containers on another node.
