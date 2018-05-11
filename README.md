@@ -133,7 +133,7 @@ Run this command _exactly_: `docker run -d --name "factomd" -v "factom_database:
 
 ### From the Portainer UI
 
-Once you have logged into the [control panel](https://federation.factomd.com), please ensure your node is selected in the top left dropdown menu.
+Once you have logged into the [control panel](http://testnet.federation.factomd.com/), please ensure your node is selected in the top left dropdown menu.
 
 Then, click `containers > add container`.
 
