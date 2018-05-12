@@ -29,7 +29,7 @@ In addition,  the following ports must be opened for factomd to function which w
 - `2222` to `54.171.68.124`, which is the SSH port used by the `ssh` container
 - `8088` to `54.171.68.124`, the factomd API port
 - `8090` to `54.171.68.124`, the factomd Control panel
-- `8110` to the world, the factomd mainnet port
+- `8110` to the world, the factomd testnet port
 
 An example using `iptables`:
 ```
@@ -128,7 +128,7 @@ There are two means of launching your `factomd` instance:
 
 ### From the Docker CLI (recommended and better tested)
 
-Run this command _exactly_: `docker run -d --name "factomd" -v "factom_database:/root/.factom/m2" -v "factom_keys:/root/.factom/private" -p "8088:8088" -p "8090:8090" -p "8108:8108" -l "name=factomd" factominc/factomd:v5.0.0-alpine -startdelay=600 -faulttimeout=120 -config=/root/.factom/private/factomd.conf
+Run this command _exactly_: `docker run -d --name "factomd" -v "factom_database:/root/.factom/m2" -v "factom_keys:/root/.factom/private" -p "8088:8088" -p "8090:8090" -p "8110:8110" -l "name=factomd" factominc/factomd:v5.0.0-alpine -startdelay=600 -faulttimeout=120 -config=/root/.factom/private/factomd.conf
 `
 
 ### From the Portainer UI
@@ -143,7 +143,7 @@ Then, click `containers > add container`.
 
 2. Enter the image name `factominc/factomd:v5.0.0-alpine`
 
-3. Mark additional ports `8088:8088`, `8108`:`8108`, `8090:8090`.
+3. Mark additional ports `8088:8088`, `8110`:`8110`, `8090:8090`.
 
 4. Do _not_ modify access control.
 
