@@ -33,12 +33,11 @@ In addition,  the following ports must be opened for factomd to function which w
 
 An example using `iptables`:
 ```
-sudo iptables -A INPUT -p tcp -s 54.171.68.124 --dport 2376 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-sudo iptables -A DOCKER-USER -s 54.171.68.124/32 -p tcp -m tcp --dport 8090 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-sudo iptables -A DOCKER-USER -s 54.171.68.124/32 -p tcp -m tcp --dport 2222 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-sudo iptables -A DOCKER-USER -s 54.171.68.124/32 -p tcp -m tcp --dport 8088 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-sudo iptables -A DOCKER-USER -p tcp -m tcp --dport 8110 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-sudo iptables -A DOCKER-USER -i <external if> -j DROP
+sudo iptables -A INPUT ! -s 54.171.68.124/32 -p tcp -m tcp --dport 2376 -m conntrack --ctstate NEW,ESTABLISHED -j REJECT --reject-with icmp-port-unreachable
+sudo iptables -A DOCKER-USER ! -s 54.171.68.124/32  -i <external if> -p tcp -m tcp --dport 8090 -j REJECT --reject-with icmp-port-unreachable
+sudo iptables -A DOCKER-USER ! -s 54.171.68.124/32  -i <external if> -p tcp -m tcp --dport 2222 -j REJECT --reject-with icmp-port-unreachable
+sudo iptables -A DOCKER-USER ! -s 54.171.68.124/32  -i <external if> -p tcp -m tcp --dport 8088 -j REJECT --reject-with icmp-port-unreachable
+sudo iptables -A DOCKER-USER -p tcp -m tcp --dport 8110 -j ACCEPT
 ```
 
 Don't forget to [save](https://www.digitalocean.com/community/tutorials/iptables-essentials-common-firewall-rules-and-commands#saving-rules) the rules!
@@ -106,7 +105,11 @@ If you already have a synced node and would like to avoid resyncing, run:
 
 `sudo cp -r <path to your database> /var/lib/docker/volumes/factom_database/_data`.
 
-In addition, please place your `factomd.conf` file in `/var/lib/docker/volumes/factom_keys/_data`.
+If you used the old docker setup your database will most likely be in `/var/lib/docker/volumes/communitytestnet_factomd_volume/_data/m2/`
+
+The directory in `_data` after the copy should be `custom-database`, as the volume is mounted at `$HOME/.factom/m2`.
+
+In addition, please place your `factomd.conf` file in `/var/lib/docker/volumes/factom_keys/_data`. This file can also be found in `/var/lib/docker/volumes/communitytestnet_factomd_volume/_data/m2/`.
 
 # Join the Docker Swarm
 
@@ -118,9 +121,12 @@ docker swarm join --token SWMTKN-1-0bv5pj6ne5sabqnt094shexfj6qdxjpuzs0dpigckrsqm
 
 As a reminder, joining as a worker means you have no ability to control containers on another node.
 
-Once you have joined the network, you will be issued a control panel login by a Factom employee.
+Once you have joined the network, you will be issued a control panel login by Flying_Viking or a Factom employee after messaging Flying Viking or one of the Factom engineers on discord. You should private message the following for **each** node:
+- NodeID (`docker info | grep NodeID`)
+- IP Address
+- Docker engine listening port (`2376`)
 
-**Only accept logins at federation.factomd.com. Any other login endpoints are fraudulent and not to be trusted.**
+**Only accept logins at https://testnet.federation.factomd.com/. Any other login endpoints are fraudulent and not to be trusted.**
 
 # Starting FactomD Container
 
@@ -128,12 +134,12 @@ There are two means of launching your `factomd` instance:
 
 ### From the Docker CLI (recommended and better tested)
 
-Run this command _exactly_: `docker run -d --name "factomd" -v "factom_database:/root/.factom/m2" -v "factom_keys:/root/.factom/private" -p "8088:8088" -p "8090:8090" -p "8110:8110" -l "name=factomd" factominc/factomd:v5.0.0-alpine -startdelay=600 -faulttimeout=120 -config=/root/.factom/private/factomd.conf
+Run this command _exactly_: `docker run -d --name "factomd" -v "factom_database:/root/.factom/m2" -v "factom_keys:/root/.factom/private" -p "8088:8088" -p "8090:8090" -p "8110:8110" -l "name=factomd" factominc/factomd:v5.0.0-alpine -broadcastnum=16 -network=CUSTOM -customnet=fct_community_test -startdelay=600 -faulttimeout=120 -config=/root/.factom/private/factomd.conf
 `
 
 ### From the Portainer UI
 
-Once you have logged into the [control panel](http://testnet.federation.factomd.com/), please ensure your node is selected in the top left dropdown menu.
+Once you have logged into the [control panel](https://testnet.federation.factomd.com/), please ensure your node is selected in the top left dropdown menu.
 
 Then, click `containers > add container`.
 
@@ -147,7 +153,7 @@ Then, click `containers > add container`.
 
 4. Do _not_ modify access control.
 
-5. Either this command for the command:  `-startdelay=600 -faulttimeout=120 -config=/root/.factom/private/factomd.conf`or your own flags. But be careful!
+5. Either this command for the command:  `-broadcastnum=16 -network=CUSTOM -customnet=fct_community_test -startdelay=600 -faulttimeout=120 -config=/root/.factom/private/factomd.conf`or your own flags. But be careful!
 
 6. Click "volumes", and map `/root/.factom/m2` to `factom_database`, and `/root/.factom/private` to `factom_keys`.
 
