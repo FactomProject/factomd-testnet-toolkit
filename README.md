@@ -28,7 +28,8 @@ In order to join the swarm, first ensure that your firewall rules allow access o
 In addition,  the following ports must be opened for factomd to function which we add to the `DOCKER-USER` chain:
 - `2222` to `54.171.68.124`, which is the SSH port used by the `ssh` container
 - `8088` to `54.171.68.124`, the factomd API port
-- `8090` to `54.171.68.124`, the factomd Control panel
+- `8090` to `0.0.0.0`, the factomd Control panel
+  - Keeping this open to the world is beneficial on testnet for debugging purposes
 - `8110` to the world, the factomd testnet port
 
 An example using `iptables`:
