@@ -19,7 +19,7 @@ Please follow the instructions [here](https://docs.docker.com/install/linux/dock
 Then, run `usermod -aG docker $USER` and logout/login.
 
 
-# Configure Docker
+# Configure Firewall for Docker
 
 In order to join the swarm, first ensure that your firewall rules allow access on the following ports. All swarm communications occur over a self-signed TLS certificate. Due to the way iptables and docker work you cannot use the `INPUT` chain to block access to apps running in a docker container as it's not a local destination but a `FORWARD` destination. By default when you map a port into a docker container it opens up to `any` host. To restrict access we need to add our rules in the `DOCKER-USER` chain [reference](https://docs.docker.com/network/iptables/).
 
@@ -43,13 +43,25 @@ sudo iptables -A DOCKER-USER -p tcp -m tcp --dport 8110 -j ACCEPT
 
 Don't forget to [save](https://www.digitalocean.com/community/tutorials/iptables-essentials-common-firewall-rules-and-commands#saving-rules) the rules!
 
-# Exposing the Docker Engine
+# Configure and Run the Docker Engine
 
-## Choose one of the following 4
+There are a number of ways to run `dockerd` and two effectively mutually
+exclusive ways to configure `dockerd`. The ways to run `dockerd` are discussed
+below, but it is also important to understand the two ways that it can be
+configured.
 
-### 1. Using `daemon.json` (recommended), works on all linux operating systems.
+## Choose one of the following options for configuring `dockerd`
+You can either use the `/etc/docker/daemon.json` file to specify `dockerd`
+options, or you can specify options on the command line. Note that while these
+methods can be used together, *if the same option is specified in both
+locations, `dockerd` will fail to start even if the options agree*. For this
+reason it is best to either specify all options on the command line or all
+options in `/etc/docker/daemon.json`.
 
-You can configure the docker daemon using a default config file, located at `/etc/docker/daemon.json`. Create this file if it does not exist.
+### 1. Using `daemon.json` (recommended)
+
+You can configure the docker daemon using a default config file, located at
+`/etc/docker/daemon.json`. Create this file if it does not exist.
 
 Example configuration:
 ```
@@ -60,8 +72,25 @@ Example configuration:
   "hosts": ["tcp://0.0.0.0:2376", "unix:///var/run/docker.sock"]
 }
 ```
+As noted above, please make sure that you do not also specify any of these
+options on the command line for `dockerd`. Please make sure to specify the
+correct paths for `"tlscert"` and `"tlskey"`. If you are using `systemd` to run
+the `docker.service` you will need an additional host in your host list:
+`"fd://"`. See `systemd` below.
 
-### 2. On RedHat
+### 2. Options on the command line
+
+For the same options as described above, you would use the following command
+line options:
+
+```
+dockerd -H=unix:///var/run/docker.sock -H=0.0.0.0:2376 --tls --tlscert=/path/to/cert.pem --tlskey=/path/to/key.pem
+```
+
+## Choose one of the following 3 options for starting dockerd
+Remeber that if you specify an option on the command line, you can't have the
+same option in your `/etc/docker/daemon.json` file.
+### 1. On RedHat
 
 Open (using `sudo`) `/etc/sysconfig/docker` in your favorite text editor.
 
@@ -69,32 +98,67 @@ Append `-H=unix:///var/run/docker.sock -H=0.0.0.0:2376 --tls --tlscert=<path to 
 
 Then, `sudo service docker restart`.
 
-### 3. Using `systemd`
+### 2. Using `systemd`
 
-Run `sudo systemctl edit docker.service`
+Run `sudo systemctl edit docker.service`. This creates an override directory at
+`/etc/systemd/system/docker.service.d/` and an override file called
+`override.conf`. Alternatively, you can create this directory and file manually
+and you can give the file a more descriptive name so long as it ends with
+`.conf`.
 
-Edit the file to match this:
+Edit the override file to match this:
+```
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd
+```
+and make sure that you add `"fd://"` to the `"hosts"` array in
+`/etc/docker/daemon.json` if you are using it for your config.
 
+If you are *not* using `/etc/docker/daemon.json` use the following for your
+service file override.
 ```
 [Service]
 ExecStart=
 ExecStart=/usr/bin/dockerd -H fd:// -H unix:///var/run/docker.sock -H tcp://0.0.0.0:2376 --tls --tlscert <path to cert.pem> --tlskey <path to key.pem>
 ```
+Then reload the configuration and the `docker.service`
+```
+sudo systemctl daemon-reload
+sudo systemctl restart docker.service
+```
 
-Then reload the configuration:
-`sudo systemctl daemon-reload`
-
-and restart docker:
-
-`sudo systemctl restart docker.service`
-
-### 4. I don't want to use a process manager
+### 3. I don't want to use a process manager
 
 You can manually start the docker daemon via:
 
-```sudo dockerd -H=unix:///var/run/docker.sock -H=0.0.0.0:2376 --tlscert=<path to cert.pem> --tlskey=<path to key.pem>```
+```
+sudo dockerd -H=unix:///var/run/docker.sock -H=0.0.0.0:2376 --tlscert=<path to cert.pem> --tlskey=<path to key.pem>
+```
+or just
+```
+sudo dockerd
+```
+if you are using the `/etc/docker/daemon.json` file for configuration.
+
+## Troubleshooting
+
+If `dockerd` fails to start review the error output carefully. It generally
+tells you exactly what the problem is.
+
+If you are using systemd and the service fails to start, finding the relevant
+logs can be a challenge since the service is configured to just keep restarting
+which can bury the logs.
+
+In this case, stop the service: `sudo systemctl stop docker`.
+
+Then manually start `dockerd`: `sudo dockerd`
+
+You will then be able to see the `dockerd` output which should point you at the
+problem. Fix those and then try starting the service with systemd again.
 
 # Create the FactomD volumes
+
 Factomd relies on two volumes,`factom_database` and `factom_keys`. Please create these before joining the swarm.
 
 1. `docker volume create factom_database`
