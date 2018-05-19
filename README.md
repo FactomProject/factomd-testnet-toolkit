@@ -38,7 +38,7 @@ sudo iptables -A INPUT ! -s 54.171.68.124/32 -p tcp -m tcp --dport 2376 -m connt
 sudo iptables -A DOCKER-USER ! -s 54.171.68.124/32  -i <external if> -p tcp -m tcp --dport 2222 -j REJECT --reject-with icmp-port-unreachable
 sudo iptables -A DOCKER-USER ! -s 54.171.68.124/32  -i <external if> -p tcp -m tcp --dport 8088 -j REJECT --reject-with icmp-port-unreachable
 ```
-(Replace <external if> with the name of the interface you use to connect to the internet eg. eth0)
+(Replace `<external if>` with the name of the interface you use to connect to the internet eg. eth0)
 
 Don't forget to [save](https://www.digitalocean.com/community/tutorials/iptables-essentials-common-firewall-rules-and-commands#saving-rules) the rules!
 
