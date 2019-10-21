@@ -8,5 +8,5 @@ idna==2.6
 ipaddress==1.0.22
 requests==2.18.4
 six==1.11.0
-urllib3==1.22
+urllib3==1.24.2
 websocket-client==0.47.0
